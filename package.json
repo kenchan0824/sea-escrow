@@ -1,7 +1,8 @@
 {
     "scripts": {
         "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
-        "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
+        "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
+        "test": "seahorse build; anchor test"
     },
     "dependencies": {
         "@coral-xyz/anchor": "^0.29.0",
