@@ -12,7 +12,7 @@ class OrderState(Enum):
   Settled = 3
   Refunded = 4
 
-class Order(Account):
+class EscrowOrder(Account):
   seller: Pubkey
   seller_token_account: Pubkey
   buyer: Pubkey
@@ -27,7 +27,7 @@ def init_order(
   seller: Signer,
   seller_token_account: TokenAccount,
   mint: TokenMint,
-  order: Empty[Order],
+  order: Empty[EscrowOrder],
   vault: Empty[TokenAccount],
   order_id: u16,
   amount: u64
@@ -47,5 +47,21 @@ def init_order(
     payer = seller,
     seeds = ['vault', order.key()],
     mint = mint,
-    authority = order
+    authority = order,
+    
   )
+
+@instruction
+def deposit(
+  buyer: Signer,
+  order: EscrowOrder,
+  buyer_token_account: TokenAccount,
+  vault: TokenAccount,
+  amount: u64
+):
+  buyer_token_account.transfer(
+    authority = buyer,
+    to = vault,
+    amount = amount,
+  )
+  order.state = OrderState.Deposited

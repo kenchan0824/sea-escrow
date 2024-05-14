@@ -8,7 +8,7 @@ use std::{cell::RefCell, rc::Rc};
 
 #[account]
 #[derive(Debug)]
-pub struct Order {
+pub struct EscrowOrder {
     pub seller: Pubkey,
     pub seller_token_account: Pubkey,
     pub buyer: Pubkey,
@@ -19,11 +19,11 @@ pub struct Order {
     pub state: OrderState,
 }
 
-impl<'info, 'entrypoint> Order {
+impl<'info, 'entrypoint> EscrowOrder {
     pub fn load(
         account: &'entrypoint mut Box<Account<'info, Self>>,
         programs_map: &'entrypoint ProgramsMap<'info>,
-    ) -> Mutable<LoadedOrder<'info, 'entrypoint>> {
+    ) -> Mutable<LoadedEscrowOrder<'info, 'entrypoint>> {
         let seller = account.seller.clone();
         let seller_token_account = account.seller_token_account.clone();
         let buyer = account.buyer.clone();
@@ -33,7 +33,7 @@ impl<'info, 'entrypoint> Order {
         let vault = account.vault.clone();
         let state = account.state.clone();
 
-        Mutable::new(LoadedOrder {
+        Mutable::new(LoadedEscrowOrder {
             __account__: account,
             __programs__: programs_map,
             seller,
@@ -47,7 +47,7 @@ impl<'info, 'entrypoint> Order {
         })
     }
 
-    pub fn store(loaded: Mutable<LoadedOrder>) {
+    pub fn store(loaded: Mutable<LoadedEscrowOrder>) {
         let mut loaded = loaded.borrow_mut();
         let seller = loaded.seller.clone();
 
@@ -84,8 +84,8 @@ impl<'info, 'entrypoint> Order {
 }
 
 #[derive(Debug)]
-pub struct LoadedOrder<'info, 'entrypoint> {
-    pub __account__: &'entrypoint mut Box<Account<'info, Order>>,
+pub struct LoadedEscrowOrder<'info, 'entrypoint> {
+    pub __account__: &'entrypoint mut Box<Account<'info, EscrowOrder>>,
     pub __programs__: &'entrypoint ProgramsMap<'info>,
     pub seller: Pubkey,
     pub seller_token_account: Pubkey,
@@ -112,11 +112,34 @@ impl Default for OrderState {
     }
 }
 
+pub fn deposit_handler<'info>(
+    mut buyer: SeahorseSigner<'info, '_>,
+    mut order: Mutable<LoadedEscrowOrder<'info, '_>>,
+    mut buyer_token_account: SeahorseAccount<'info, '_, TokenAccount>,
+    mut vault: SeahorseAccount<'info, '_, TokenAccount>,
+    mut amount: u64,
+) -> () {
+    token::transfer(
+        CpiContext::new(
+            buyer_token_account.programs.get("token_program"),
+            token::Transfer {
+                from: buyer_token_account.to_account_info(),
+                authority: buyer.clone().to_account_info(),
+                to: vault.clone().to_account_info(),
+            },
+        ),
+        amount.clone(),
+    )
+    .unwrap();
+
+    assign!(order.borrow_mut().state, OrderState::Deposited);
+}
+
 pub fn init_order_handler<'info>(
     mut seller: SeahorseSigner<'info, '_>,
     mut seller_token_account: SeahorseAccount<'info, '_, TokenAccount>,
     mut mint: SeahorseAccount<'info, '_, Mint>,
-    mut order: Empty<Mutable<LoadedOrder<'info, '_>>>,
+    mut order: Empty<Mutable<LoadedEscrowOrder<'info, '_>>>,
     mut vault: Empty<SeahorseAccount<'info, '_, TokenAccount>>,
     mut order_id: u16,
     mut amount: u64,

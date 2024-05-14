@@ -5,17 +5,21 @@ import { SeaEscrow } from "../target/types/sea_escrow";
 import { SimpleUser } from "@solardev/simple-web3";
 const assert = require("assert");
 
-describe("sea_escrow", () => {
+describe("Seahorse Escrow", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  let minter = undefined;
-  let seller = undefined;
-  let buyer = undefined;
+  let minter: SimpleUser;
+  let seller: SimpleUser;
+  let buyer: SimpleUser;
 
+  let orderId: number;
+  let orderAddress: web3.PublicKey;
+  let vaultAddress: web3.PublicKey;
+  
   const program = anchor.workspace.SeaEscrow as Program<SeaEscrow>;
 
-  it("seller can initiate an escrow account", async () => {
+  before("preparation", async () => {
     minter = await SimpleUser.generate(provider.connection);
     seller = await SimpleUser.generate(provider.connection);
     buyer = await SimpleUser.generate(provider.connection);
@@ -25,17 +29,20 @@ describe("sea_escrow", () => {
       .transfer("USDC", 0, seller)
       .commit();
 
-    const orderId = 255;
+    orderId = 255;
 
-    const [orderAddress] = web3.PublicKey.findProgramAddressSync(
+    [orderAddress, ] = web3.PublicKey.findProgramAddressSync(
       [Buffer.from("order"), seller.publicKey.toBuffer(), new BN(orderId).toArrayLike(Buffer, 'le', 2)],
       program.programId
-    )
+    );
 
-    const [vaultAddress] = web3.PublicKey.findProgramAddressSync(
+    [vaultAddress, ] = web3.PublicKey.findProgramAddressSync(
       [Buffer.from("vault"), orderAddress.toBuffer()],
       program.programId
     );
+  });
+
+  it("seller can initiate an escrow account", async () => {
 
     await program.methods.initOrder(orderId, new BN(100_000_000_000))
       .accounts({
@@ -48,13 +55,36 @@ describe("sea_escrow", () => {
       .signers([seller])
       .rpc();
 
-    const order = await program.account.order.fetch(orderAddress);
+    const order = await program.account.escrowOrder.fetch(orderAddress);
     assert.ok(order.seller.toBase58() == seller.publicKey.toBase58());
     assert.ok(order.sellerTokenAccount.toBase58() == seller.tokenAccounts["USDC"].toBase58());
     assert.ok(order.mint.toBase58() == minter.tokens["USDC"].toBase58());
     assert.ok(order.amount.toNumber() == 100_000_000_000);
+    assert.ok(order.state.pending);
 
-    const tokenAccount = await getAccount(provider.connection, vaultAddress)
-    assert.ok(tokenAccount.mint.toBase58() == minter.tokens["USDC"].toBase58());
+    const vault = await getAccount(provider.connection, vaultAddress);
+    assert.ok(vault.mint.toBase58() == minter.tokens["USDC"].toBase58());
   });
+
+  it("buyer can deposit to escrow vault", async () => {
+
+    await program.methods.deposit(new BN(100_000_000_000))
+      .accounts({
+        buyer: buyer.publicKey,
+        order: orderAddress,
+        buyerTokenAccount: buyer.tokenAccounts["USDC"],
+        vault: vaultAddress,
+      })
+      .signers([buyer])
+      .rpc({ skipPreflight:true });
+
+    const balance = await buyer.balance("USDC");
+    assert.ok(balance == 0);
+    const vault = await getAccount(provider.connection, vaultAddress);    
+    assert.ok(Number(vault.amount) == 100_000_000_000);
+    
+    const order = await program.account.escrowOrder.fetch(orderAddress);
+    assert.ok(order.state.deposited);
+  });
+
 });

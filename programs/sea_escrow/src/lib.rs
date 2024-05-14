@@ -224,6 +224,58 @@ mod sea_escrow {
     use std::collections::HashMap;
 
     #[derive(Accounts)]
+    # [instruction (amount : u64)]
+    pub struct Deposit<'info> {
+        #[account(mut)]
+        pub buyer: Signer<'info>,
+        #[account(mut)]
+        pub order: Box<Account<'info, dot::program::EscrowOrder>>,
+        #[account(mut)]
+        pub buyer_token_account: Box<Account<'info, TokenAccount>>,
+        #[account(mut)]
+        pub vault: Box<Account<'info, TokenAccount>>,
+        pub token_program: Program<'info, Token>,
+    }
+
+    pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+        let mut programs = HashMap::new();
+
+        programs.insert(
+            "token_program",
+            ctx.accounts.token_program.to_account_info(),
+        );
+
+        let programs_map = ProgramsMap(programs);
+        let buyer = SeahorseSigner {
+            account: &ctx.accounts.buyer,
+            programs: &programs_map,
+        };
+
+        let order = dot::program::EscrowOrder::load(&mut ctx.accounts.order, &programs_map);
+        let buyer_token_account = SeahorseAccount {
+            account: &ctx.accounts.buyer_token_account,
+            programs: &programs_map,
+        };
+
+        let vault = SeahorseAccount {
+            account: &ctx.accounts.vault,
+            programs: &programs_map,
+        };
+
+        deposit_handler(
+            buyer.clone(),
+            order.clone(),
+            buyer_token_account.clone(),
+            vault.clone(),
+            amount,
+        );
+
+        dot::program::EscrowOrder::store(order);
+
+        return Ok(());
+    }
+
+    #[derive(Accounts)]
     # [instruction (order_id : u16 , amount : u64)]
     pub struct InitOrder<'info> {
         #[account(mut)]
@@ -232,8 +284,8 @@ mod sea_escrow {
         pub seller_token_account: Box<Account<'info, TokenAccount>>,
         #[account(mut)]
         pub mint: Box<Account<'info, Mint>>,
-        # [account (init , space = std :: mem :: size_of :: < dot :: program :: Order > () + 8 , payer = seller , seeds = ["order" . as_bytes () . as_ref () , seller . key () . as_ref () , order_id . to_le_bytes () . as_ref ()] , bump)]
-        pub order: Box<Account<'info, dot::program::Order>>,
+        # [account (init , space = std :: mem :: size_of :: < dot :: program :: EscrowOrder > () + 8 , payer = seller , seeds = ["order" . as_bytes () . as_ref () , seller . key () . as_ref () , order_id . to_le_bytes () . as_ref ()] , bump)]
+        pub order: Box<Account<'info, dot::program::EscrowOrder>>,
         # [account (init , payer = seller , seeds = ["vault" . as_bytes () . as_ref () , order . key () . as_ref ()] , bump , token :: mint = mint , token :: authority = order)]
         pub vault: Box<Account<'info, TokenAccount>>,
         pub rent: Sysvar<'info, Rent>,
@@ -271,7 +323,7 @@ mod sea_escrow {
         };
 
         let order = Empty {
-            account: dot::program::Order::load(&mut ctx.accounts.order, &programs_map),
+            account: dot::program::EscrowOrder::load(&mut ctx.accounts.order, &programs_map),
             bump: Some(ctx.bumps.order),
         };
 
@@ -293,7 +345,7 @@ mod sea_escrow {
             amount,
         );
 
-        dot::program::Order::store(order.account);
+        dot::program::EscrowOrder::store(order.account);
 
         return Ok(());
     }
