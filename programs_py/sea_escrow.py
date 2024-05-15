@@ -48,23 +48,35 @@ def init_order(
         mint = mint,
         authority = order,    
     )
+    order.vault = vault.key()
 
 @instruction
 def deposit(
     buyer: Signer,
     order: EscrowOrder,
     buyer_token_account: TokenAccount,
-    vault: TokenAccount,
-    amount: u64
+    vault: TokenAccount
 ):
     assert order.state == OrderState.Pending, "cannot deposit again"
-    assert amount >= order.amount, "amount must be enough"
+    assert vault.key() == order.vault, "wrong vault inputted"
     
     buyer_token_account.transfer(
         authority = buyer,
         to = vault,
-        amount = amount,
+        amount = order.amount,
     )
     order.buyer = buyer.key()
     order.buyer_token_account = buyer_token_account.key()
     order.state = OrderState.Deposited
+    
+@instruction
+def release(
+    buyer: Signer,
+    order: EscrowOrder,
+    vault: TokenAccount,
+    seller_token_account: TokenAccount
+):
+    assert vault.key() == order.vault, "wrong vault inputted"
+    assert order.state == OrderState.Deposited, "cannot release before deposit"
+    assert seller_token_account.key() == order.seller_token_account, "must relase to seller token account"
+    pass

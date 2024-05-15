@@ -224,7 +224,6 @@ mod sea_escrow {
     use std::collections::HashMap;
 
     #[derive(Accounts)]
-    # [instruction (amount : u64)]
     pub struct Deposit<'info> {
         #[account(mut)]
         pub buyer: Signer<'info>,
@@ -237,7 +236,7 @@ mod sea_escrow {
         pub token_program: Program<'info, Token>,
     }
 
-    pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+    pub fn deposit(ctx: Context<Deposit>) -> Result<()> {
         let mut programs = HashMap::new();
 
         programs.insert(
@@ -267,7 +266,6 @@ mod sea_escrow {
             order.clone(),
             buyer_token_account.clone(),
             vault.clone(),
-            amount,
         );
 
         dot::program::EscrowOrder::store(order);
@@ -346,6 +344,49 @@ mod sea_escrow {
         );
 
         dot::program::EscrowOrder::store(order.account);
+
+        return Ok(());
+    }
+
+    #[derive(Accounts)]
+    pub struct Release<'info> {
+        #[account(mut)]
+        pub buyer: Signer<'info>,
+        #[account(mut)]
+        pub order: Box<Account<'info, dot::program::EscrowOrder>>,
+        #[account(mut)]
+        pub vault: Box<Account<'info, TokenAccount>>,
+        #[account(mut)]
+        pub seller_token_account: Box<Account<'info, TokenAccount>>,
+    }
+
+    pub fn release(ctx: Context<Release>) -> Result<()> {
+        let mut programs = HashMap::new();
+        let programs_map = ProgramsMap(programs);
+        let buyer = SeahorseSigner {
+            account: &ctx.accounts.buyer,
+            programs: &programs_map,
+        };
+
+        let order = dot::program::EscrowOrder::load(&mut ctx.accounts.order, &programs_map);
+        let vault = SeahorseAccount {
+            account: &ctx.accounts.vault,
+            programs: &programs_map,
+        };
+
+        let seller_token_account = SeahorseAccount {
+            account: &ctx.accounts.seller_token_account,
+            programs: &programs_map,
+        };
+
+        release_handler(
+            buyer.clone(),
+            order.clone(),
+            vault.clone(),
+            seller_token_account.clone(),
+        );
+
+        dot::program::EscrowOrder::store(order);
 
         return Ok(());
     }

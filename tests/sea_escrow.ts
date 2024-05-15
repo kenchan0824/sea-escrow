@@ -19,7 +19,8 @@ describe("Seahorse Escrow", () => {
 
     const program = anchor.workspace.SeaEscrow as Program<SeaEscrow>;
 
-    before("preparation", async () => {
+    before("", async () => {
+
         minter = await SimpleUser.generate(provider.connection);
         seller = await SimpleUser.generate(provider.connection);
         buyer = await SimpleUser.generate(provider.connection);
@@ -42,7 +43,7 @@ describe("Seahorse Escrow", () => {
         );
     });
 
-    it("sellers can initiate an escrow order", async () => {
+    it("seller can initiate an escrow order", async () => {
 
         await program.methods.initOrder(orderId, new BN(100_000_000_000))
             .accounts({
@@ -60,36 +61,37 @@ describe("Seahorse Escrow", () => {
         assert.ok(order.sellerTokenAccount.toBase58() == seller.tokenAccounts["USDC"].toBase58());
         assert.ok(order.mint.toBase58() == minter.tokens["USDC"].toBase58());
         assert.ok(order.amount.toNumber() == 100_000_000_000);
+        assert.ok(order.vault.toBase58() == vaultAddress.toBase58());
         assert.ok(order.state.pending);
 
         const vault = await getAccount(provider.connection, vaultAddress);
         assert.ok(vault.mint.toBase58() == minter.tokens["USDC"].toBase58());
     });
 
-    it("buyers must deposit the exact amount", async () => {
+    it("buyer cannot release fund before deposit", async () => {
         let success = false;
-
+        
         try {
-            await program.methods.deposit(new BN(99_000_000_000))
+            await program.methods.release()
                 .accounts({
                     buyer: buyer.publicKey,
                     order: orderAddress,
-                    buyerTokenAccount: buyer.tokenAccounts["USDC"],
                     vault: vaultAddress,
+                    sellerTokenAccount: seller.tokenAccounts["USDC"],
                 })
                 .signers([buyer])
-                .rpc({ skipPreflight: true });
+                .rpc();
             
-                success = true;
+            success = true;
         } catch(err) {
-          success = false;  
+            success = false;
         }
-        assert.ok(success == false);
+        assert.ok(success == false)
     });
-    
-    it("buyers can deposit to the order vault", async () => {
 
-        await program.methods.deposit(new BN(100_000_000_000))
+    it("buyer can deposit to the order vault", async () => {
+
+        await program.methods.deposit()
             .accounts({
                 buyer: buyer.publicKey,
                 order: orderAddress,
@@ -97,7 +99,7 @@ describe("Seahorse Escrow", () => {
                 vault: vaultAddress,
             })
             .signers([buyer])
-            .rpc({ skipPreflight: true });
+            .rpc();
 
         const balance = await buyer.balance("USDC");
         assert.ok(balance == 0);
@@ -110,11 +112,13 @@ describe("Seahorse Escrow", () => {
         assert.ok(order.state.deposited);
     });
 
-    it("buyers cannot deposit repeatedly", async () => {
+    it("buyer cannot deposit repeatedly", async () => {
+
         let success = false;
         await minter.transfer("USDC", 100, buyer).commit();
+
         try {
-            await program.methods.deposit(new BN(100_000_000_000))
+            await program.methods.deposit()
                 .accounts({
                     buyer: buyer.publicKey,
                     order: orderAddress,
@@ -122,7 +126,7 @@ describe("Seahorse Escrow", () => {
                     vault: vaultAddress,
                 })
                 .signers([buyer])
-                .rpc({ skipPreflight: true });
+                .rpc();
             
             success = true;
         } catch(err) {
@@ -130,5 +134,30 @@ describe("Seahorse Escrow", () => {
         }
         assert.ok(success == false)
     });
+
+    it("buyer must release to the seller token account", async () => {
+        let success = false;
+        
+        try {
+            await program.methods.release()
+                .accounts({
+                    buyer: buyer.publicKey,
+                    order: orderAddress,
+                    vault: vaultAddress,
+                    sellerTokenAccount: buyer.tokenAccounts["USDC"],
+                })
+                .signers([buyer])
+                .rpc();
+            
+            success = true;
+        } catch(err) {
+            success = false;
+        }
+        assert.ok(success == false)
+    });
+
+    // it("buyer can release vault fund", async () => {
+    
+    // });
 
 });

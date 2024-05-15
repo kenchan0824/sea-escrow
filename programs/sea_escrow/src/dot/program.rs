@@ -117,14 +117,13 @@ pub fn deposit_handler<'info>(
     mut order: Mutable<LoadedEscrowOrder<'info, '_>>,
     mut buyer_token_account: SeahorseAccount<'info, '_, TokenAccount>,
     mut vault: SeahorseAccount<'info, '_, TokenAccount>,
-    mut amount: u64,
 ) -> () {
     if !(order.borrow().state == OrderState::Pending) {
         panic!("cannot deposit again");
     }
 
-    if !(amount >= order.borrow().amount) {
-        panic!("amount must be enough");
+    if !(vault.key() == order.borrow().vault) {
+        panic!("wrong vault inputted");
     }
 
     token::transfer(
@@ -136,7 +135,7 @@ pub fn deposit_handler<'info>(
                 to: vault.clone().to_account_info(),
             },
         ),
-        amount.clone(),
+        order.borrow().amount.clone(),
     )
     .unwrap();
 
@@ -175,4 +174,25 @@ pub fn init_order_handler<'info>(
     assign!(order.borrow_mut().state, OrderState::Pending);
 
     let mut vault = vault.account.clone();
+
+    assign!(order.borrow_mut().vault, vault.key());
+}
+
+pub fn release_handler<'info>(
+    mut buyer: SeahorseSigner<'info, '_>,
+    mut order: Mutable<LoadedEscrowOrder<'info, '_>>,
+    mut vault: SeahorseAccount<'info, '_, TokenAccount>,
+    mut seller_token_account: SeahorseAccount<'info, '_, TokenAccount>,
+) -> () {
+    if !(vault.key() == order.borrow().vault) {
+        panic!("wrong vault inputted");
+    }
+
+    if !(order.borrow().state == OrderState::Deposited) {
+        panic!("cannot release before deposit");
+    }
+
+    if !(seller_token_account.key() == order.borrow().seller_token_account) {
+        panic!("must relase to seller token account");
+    }
 }
