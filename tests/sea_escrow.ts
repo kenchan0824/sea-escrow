@@ -87,8 +87,6 @@ describe("Seahorse Escrow", () => {
         assert.ok(success == false);
     });
     
-    it("buyers cannot deposit repeatedly", async () => {});
-
     it("buyers can deposit to the order vault", async () => {
 
         await program.methods.deposit(new BN(100_000_000_000))
@@ -107,7 +105,30 @@ describe("Seahorse Escrow", () => {
         assert.ok(Number(vault.amount) == 100_000_000_000);
 
         const order = await program.account.escrowOrder.fetch(orderAddress);
+        assert.ok(order.buyer.toBase58() == buyer.publicKey.toBase58());
+        assert.ok(order.buyerTokenAccount.toBase58() == buyer.tokenAccounts["USDC"].toBase58());
         assert.ok(order.state.deposited);
+    });
+
+    it("buyers cannot deposit repeatedly", async () => {
+        let success = false;
+        await minter.transfer("USDC", 100, buyer).commit();
+        try {
+            await program.methods.deposit(new BN(100_000_000_000))
+                .accounts({
+                    buyer: buyer.publicKey,
+                    order: orderAddress,
+                    buyerTokenAccount: buyer.tokenAccounts["USDC"],
+                    vault: vaultAddress,
+                })
+                .signers([buyer])
+                .rpc({ skipPreflight: true });
+            
+            success = true;
+        } catch(err) {
+            success = false;
+        }
+        assert.ok(success == false)
     });
 
 });

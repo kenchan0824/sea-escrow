@@ -57,6 +57,7 @@ def deposit(
     vault: TokenAccount,
     amount: u64
 ):
+    assert order.state == OrderState.Pending, "cannot deposit again"
     assert amount >= order.amount, "amount must be enough"
     
     buyer_token_account.transfer(
@@ -64,4 +65,6 @@ def deposit(
         to = vault,
         amount = amount,
     )
+    order.buyer = buyer.key()
+    order.buyer_token_account = buyer_token_account.key()
     order.state = OrderState.Deposited

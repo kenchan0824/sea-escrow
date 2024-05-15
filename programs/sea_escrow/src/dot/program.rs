@@ -119,6 +119,10 @@ pub fn deposit_handler<'info>(
     mut vault: SeahorseAccount<'info, '_, TokenAccount>,
     mut amount: u64,
 ) -> () {
+    if !(order.borrow().state == OrderState::Pending) {
+        panic!("cannot deposit again");
+    }
+
     if !(amount >= order.borrow().amount) {
         panic!("amount must be enough");
     }
@@ -135,6 +139,13 @@ pub fn deposit_handler<'info>(
         amount.clone(),
     )
     .unwrap();
+
+    assign!(order.borrow_mut().buyer, buyer.key());
+
+    assign!(
+        order.borrow_mut().buyer_token_account,
+        buyer_token_account.key()
+    );
 
     assign!(order.borrow_mut().state, OrderState::Deposited);
 }
