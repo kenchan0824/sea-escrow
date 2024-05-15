@@ -14,6 +14,8 @@ class OrderState(Enum):
 
 class EscrowOrder(Account):
     seller: Pubkey
+    order_id: u16
+    bump: u8
     seller_token_account: Pubkey
     buyer: Pubkey
     buyer_token_account: Pubkey
@@ -32,23 +34,28 @@ def init_order(
     order_id: u16,
     amount: u64
 ):
+    bump = order.bump()
+    
     order = order.init(
         payer = seller,
-        seeds = ['order', seller, order_id]
+        seeds = ["order", seller, order_id]
     )
-    order.seller = seller.key()
-    order.seller_token_account = seller_token_account.key()
-    order.mint = mint.key()
-    order.amount = amount
-    order.state = OrderState.Pending
-
     vault = vault.init(
         payer = seller,
-        seeds = ['vault', order.key()],
+        seeds = ["vault", order.key()],
         mint = mint,
         authority = order,    
     )
+
+    order.seller = seller.key()
+    order.seller_token_account = seller_token_account.key()
+    order.mint = mint.key()
     order.vault = vault.key()
+    order.order_id = order_id
+    order.amount = amount
+    order.bump = bump
+    order.state = OrderState.Pending
+
 
 @instruction
 def deposit(
@@ -68,6 +75,7 @@ def deposit(
     order.buyer = buyer.key()
     order.buyer_token_account = buyer_token_account.key()
     order.state = OrderState.Deposited
+
     
 @instruction
 def release(
@@ -79,4 +87,16 @@ def release(
     assert vault.key() == order.vault, "wrong vault inputted"
     assert order.state == OrderState.Deposited, "cannot release before deposit"
     assert seller_token_account.key() == order.seller_token_account, "must relase to seller token account"
-    pass
+    
+    seller = order.seller
+    order_id = order.order_id
+    bump = order.bump
+    
+    vault.transfer(
+        to = seller_token_account,
+        amount = vault.amount(),
+        authority = order,
+        signer = ["order", seller, order_id, bump]
+    )
+    
+    order.state = OrderState.Settled

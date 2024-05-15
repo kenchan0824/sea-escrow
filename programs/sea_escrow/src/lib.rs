@@ -358,10 +358,17 @@ mod sea_escrow {
         pub vault: Box<Account<'info, TokenAccount>>,
         #[account(mut)]
         pub seller_token_account: Box<Account<'info, TokenAccount>>,
+        pub token_program: Program<'info, Token>,
     }
 
     pub fn release(ctx: Context<Release>) -> Result<()> {
         let mut programs = HashMap::new();
+
+        programs.insert(
+            "token_program",
+            ctx.accounts.token_program.to_account_info(),
+        );
+
         let programs_map = ProgramsMap(programs);
         let buyer = SeahorseSigner {
             account: &ctx.accounts.buyer,

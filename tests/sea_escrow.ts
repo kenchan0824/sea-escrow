@@ -26,13 +26,13 @@ describe("Seahorse Escrow", () => {
         buyer = await SimpleUser.generate(provider.connection);
 
         await minter.mint("USDC")
-            .transfer("USDC", 100, buyer)
+            .transfer("USDC", 200, buyer)
             .transfer("USDC", 0, seller)
             .commit();
 
         orderId = 255;
 
-        [orderAddress,] = web3.PublicKey.findProgramAddressSync(
+        [orderAddress, ] = web3.PublicKey.findProgramAddressSync(
             [Buffer.from("order"), seller.publicKey.toBuffer(), new BN(orderId).toArrayLike(Buffer, 'le', 2)],
             program.programId
         );
@@ -102,7 +102,7 @@ describe("Seahorse Escrow", () => {
             .rpc();
 
         const balance = await buyer.balance("USDC");
-        assert.ok(balance == 0);
+        assert.ok(balance == 100);
         const vault = await getAccount(provider.connection, vaultAddress);
         assert.ok(Number(vault.amount) == 100_000_000_000);
 
@@ -115,7 +115,6 @@ describe("Seahorse Escrow", () => {
     it("buyer cannot deposit repeatedly", async () => {
 
         let success = false;
-        await minter.transfer("USDC", 100, buyer).commit();
 
         try {
             await program.methods.deposit()
@@ -156,8 +155,23 @@ describe("Seahorse Escrow", () => {
         assert.ok(success == false)
     });
 
-    // it("buyer can release vault fund", async () => {
-    
+    // it("only buyer can release vault funds", async () => {
     // });
+
+    it("buyer can release vault fund", async () => {
+    
+        await program.methods.release()
+            .accounts({
+                buyer: buyer.publicKey,
+                order: orderAddress,
+                vault: vaultAddress,
+                sellerTokenAccount: seller.tokenAccounts["USDC"],
+            })
+            .signers([buyer])
+            .rpc({ skipPreflight: true });
+
+        const balance = await seller.balance("USDC");
+        assert.ok(balance == 100)
+    });
 
 });

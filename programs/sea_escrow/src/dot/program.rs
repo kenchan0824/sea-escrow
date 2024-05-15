@@ -10,6 +10,8 @@ use std::{cell::RefCell, rc::Rc};
 #[derive(Debug)]
 pub struct EscrowOrder {
     pub seller: Pubkey,
+    pub order_id: u16,
+    pub bump: u8,
     pub seller_token_account: Pubkey,
     pub buyer: Pubkey,
     pub buyer_token_account: Pubkey,
@@ -25,6 +27,8 @@ impl<'info, 'entrypoint> EscrowOrder {
         programs_map: &'entrypoint ProgramsMap<'info>,
     ) -> Mutable<LoadedEscrowOrder<'info, 'entrypoint>> {
         let seller = account.seller.clone();
+        let order_id = account.order_id;
+        let bump = account.bump;
         let seller_token_account = account.seller_token_account.clone();
         let buyer = account.buyer.clone();
         let buyer_token_account = account.buyer_token_account.clone();
@@ -37,6 +41,8 @@ impl<'info, 'entrypoint> EscrowOrder {
             __account__: account,
             __programs__: programs_map,
             seller,
+            order_id,
+            bump,
             seller_token_account,
             buyer,
             buyer_token_account,
@@ -52,6 +58,14 @@ impl<'info, 'entrypoint> EscrowOrder {
         let seller = loaded.seller.clone();
 
         loaded.__account__.seller = seller;
+
+        let order_id = loaded.order_id;
+
+        loaded.__account__.order_id = order_id;
+
+        let bump = loaded.bump;
+
+        loaded.__account__.bump = bump;
 
         let seller_token_account = loaded.seller_token_account.clone();
 
@@ -88,6 +102,8 @@ pub struct LoadedEscrowOrder<'info, 'entrypoint> {
     pub __account__: &'entrypoint mut Box<Account<'info, EscrowOrder>>,
     pub __programs__: &'entrypoint ProgramsMap<'info>,
     pub seller: Pubkey,
+    pub order_id: u16,
+    pub bump: u8,
     pub seller_token_account: Pubkey,
     pub buyer: Pubkey,
     pub buyer_token_account: Pubkey,
@@ -158,7 +174,9 @@ pub fn init_order_handler<'info>(
     mut order_id: u16,
     mut amount: u64,
 ) -> () {
+    let mut bump = order.bump.unwrap();
     let mut order = order.account.clone();
+    let mut vault = vault.account.clone();
 
     assign!(order.borrow_mut().seller, seller.key());
 
@@ -169,13 +187,15 @@ pub fn init_order_handler<'info>(
 
     assign!(order.borrow_mut().mint, mint.key());
 
+    assign!(order.borrow_mut().vault, vault.key());
+
+    assign!(order.borrow_mut().order_id, order_id);
+
     assign!(order.borrow_mut().amount, amount);
 
+    assign!(order.borrow_mut().bump, bump);
+
     assign!(order.borrow_mut().state, OrderState::Pending);
-
-    let mut vault = vault.account.clone();
-
-    assign!(order.borrow_mut().vault, vault.key());
 }
 
 pub fn release_handler<'info>(
@@ -195,4 +215,31 @@ pub fn release_handler<'info>(
     if !(seller_token_account.key() == order.borrow().seller_token_account) {
         panic!("must relase to seller token account");
     }
+
+    let mut seller = order.borrow().seller;
+    let mut order_id = order.borrow().order_id;
+    let mut bump = order.borrow().bump;
+
+    token::transfer(
+        CpiContext::new_with_signer(
+            vault.programs.get("token_program"),
+            token::Transfer {
+                from: vault.to_account_info(),
+                authority: order.borrow().__account__.to_account_info(),
+                to: seller_token_account.clone().to_account_info(),
+            },
+            &[Mutable::new(vec![
+                "order".to_string().as_bytes().as_ref(),
+                seller.as_ref(),
+                order_id.to_le_bytes().as_ref(),
+                bump.to_le_bytes().as_ref(),
+            ])
+            .borrow()
+            .as_slice()],
+        ),
+        vault.amount,
+    )
+    .unwrap();
+
+    assign!(order.borrow_mut().state, OrderState::Settled);
 }
