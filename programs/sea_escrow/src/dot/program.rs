@@ -119,6 +119,10 @@ pub fn deposit_handler<'info>(
     mut vault: SeahorseAccount<'info, '_, TokenAccount>,
     mut amount: u64,
 ) -> () {
+    if !(amount >= order.borrow().amount) {
+        panic!("amount must be enough");
+    }
+
     token::transfer(
         CpiContext::new(
             buyer_token_account.programs.get("token_program"),
@@ -144,8 +148,6 @@ pub fn init_order_handler<'info>(
     mut order_id: u16,
     mut amount: u64,
 ) -> () {
-    solana_program::msg!("{}", order_id);
-
     let mut order = order.account.clone();
 
     assign!(order.borrow_mut().seller, seller.key());
