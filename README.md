@@ -8,7 +8,7 @@ This project is motivated by an imaginary E-commerce scenario, where the seller 
 - When the product is fulfilled, he can instruct the order to release the funds to the seller. 
 - Otherwise, he can dispute to the referee and ask for a refund. 
 
-![escrow](./escrow.jpg)
+![escrow](./escrow.png)
 
 > Refer to the [Counter program](https://github.com/kenchan0824/sea-counter) for the Seahorse basics. Also, our test module uses the **Simple-Web3** module, you can read the docs [here](https://github.com/kenchan0824/simple-web3).
 
