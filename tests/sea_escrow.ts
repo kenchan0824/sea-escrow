@@ -72,7 +72,7 @@ describe("Seahorse Escrow - Settle Route", () => {
         assert.ok(vault.mint.toBase58() == minter.tokens["USDC"].mint.toBase58());
     });
 
-    it("buyer cannot release fund before deposit", async () => {
+    it("buyer cannot release vault funds before deposit", async () => {
         let success = false;
         
         try {
@@ -157,7 +157,7 @@ describe("Seahorse Escrow - Settle Route", () => {
         assert.ok(success == false)
     });
 
-    it("only buyer can release vault funds", async () => {
+    it("only the buyer can release vault funds", async () => {
         let success = false;
         const hacker = await SimpleUser.generate(provider.connection);
         
@@ -178,7 +178,7 @@ describe("Seahorse Escrow - Settle Route", () => {
         assert.ok(success == false);
     });
 
-    it("buyer can release vault fund", async () => {
+    it("buyer can release vault funds", async () => {
     
         await program.methods.release()
             .accounts({
@@ -275,7 +275,7 @@ describe("Seahorse Escrow - Dispute Route", async () => {
             .rpc({ skipPreflight: true });
     });
 
-    it("only buyer can dispute his escort order", async () => {
+    it("only the buyer can dispute his escort order", async () => {
         let success = false;
         const hacker = await SimpleUser.generate(provider.connection);
 
