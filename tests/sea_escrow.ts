@@ -9,7 +9,7 @@ const provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
 const program = anchor.workspace.SeaEscrow as Program<SeaEscrow>;
 
-describe.skip("Seahorse Escrow - Settle Route", () => {
+describe("Seahorse Escrow - Settle Route", () => {
 
     let minter: SimpleUser;
     let seller: SimpleUser;
@@ -326,4 +326,3 @@ describe("Seahorse Escrow - Dispute Route", async () => {
     })
 
 });
-
