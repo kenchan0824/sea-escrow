@@ -17,6 +17,7 @@ class EscrowOrder(Account):
     order_id: u16
     bump: u8
     seller_token_account: Pubkey
+    referee: Pubkey
     buyer: Pubkey
     buyer_token_account: Pubkey
     mint: Pubkey
@@ -32,7 +33,8 @@ def init_order(
     order: Empty[EscrowOrder],
     vault: Empty[TokenAccount],
     order_id: u16,
-    amount: u64
+    referee: Pubkey, 
+    amount: u64,
 ):
     bump = order.bump()
     
@@ -52,6 +54,7 @@ def init_order(
     order.mint = mint.key()
     order.vault = vault.key()
     order.order_id = order_id
+    order.referee = referee
     order.amount = amount
     order.bump = bump
     order.state = OrderState.Pending

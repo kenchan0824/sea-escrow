@@ -274,7 +274,7 @@ mod sea_escrow {
     }
 
     #[derive(Accounts)]
-    # [instruction (order_id : u16 , amount : u64)]
+    # [instruction (order_id : u16 , referee : Pubkey , amount : u64)]
     pub struct InitOrder<'info> {
         #[account(mut)]
         pub seller: Signer<'info>,
@@ -291,7 +291,12 @@ mod sea_escrow {
         pub token_program: Program<'info, Token>,
     }
 
-    pub fn init_order(ctx: Context<InitOrder>, order_id: u16, amount: u64) -> Result<()> {
+    pub fn init_order(
+        ctx: Context<InitOrder>,
+        order_id: u16,
+        referee: Pubkey,
+        amount: u64,
+    ) -> Result<()> {
         let mut programs = HashMap::new();
 
         programs.insert(
@@ -340,6 +345,7 @@ mod sea_escrow {
             order.clone(),
             vault.clone(),
             order_id,
+            referee,
             amount,
         );
 

@@ -12,6 +12,7 @@ describe("Seahorse Escrow", () => {
     let minter: SimpleUser;
     let seller: SimpleUser;
     let buyer: SimpleUser;
+    let referee: SimpleUser;
 
     let orderId: number;
     let orderAddress: web3.PublicKey;
@@ -24,6 +25,7 @@ describe("Seahorse Escrow", () => {
         minter = await SimpleUser.generate(provider.connection);
         seller = await SimpleUser.generate(provider.connection);
         buyer = await SimpleUser.generate(provider.connection);
+        referee = await SimpleUser.generate(provider.connection); 
 
         await minter.mint("USDC")
             .transfer("USDC", 200, buyer)
@@ -45,7 +47,9 @@ describe("Seahorse Escrow", () => {
 
     it("seller can initiate an escrow order", async () => {
 
-        await program.methods.initOrder(orderId, new BN(100 * Math.pow(10, 9)))
+        const amount = new BN(100 * Math.pow(10, 9));
+        
+        await program.methods.initOrder(orderId, referee.publicKey, amount)
             .accounts({
                 seller: seller.publicKey,
                 sellerTokenAccount: seller.tokenAccounts["USDC"],
@@ -54,7 +58,7 @@ describe("Seahorse Escrow", () => {
                 vault: vaultAddress
             })
             .signers([seller])
-            .rpc();
+            .rpc({ skipPreflight: true });
 
         const order = await program.account.escrowOrder.fetch(orderAddress);
         assert.ok(order.seller.toBase58() == seller.publicKey.toBase58());
@@ -80,7 +84,7 @@ describe("Seahorse Escrow", () => {
                     sellerTokenAccount: seller.tokenAccounts["USDC"],
                 })
                 .signers([buyer])
-                .rpc();
+                .rpc({ skipPreflight: true });
             
             success = true;
         } catch(err) {}
@@ -98,7 +102,7 @@ describe("Seahorse Escrow", () => {
                 vault: vaultAddress,
             })
             .signers([buyer])
-            .rpc();
+            .rpc({ skipPreflight: true });
 
         const { amount } = await buyer.balance("USDC");
         assert.ok(amount == 100);
@@ -125,7 +129,7 @@ describe("Seahorse Escrow", () => {
                     vault: vaultAddress,
                 })
                 .signers([buyer])
-                .rpc();
+                .rpc({ skipPreflight: true });
             
             success = true;
         } catch(err) {}
@@ -145,7 +149,7 @@ describe("Seahorse Escrow", () => {
                     sellerTokenAccount: buyer.tokenAccounts["USDC"],
                 })
                 .signers([buyer])
-                .rpc();
+                .rpc({ skipPreflight: true });
             
             success = true;
         } catch(err) {}
@@ -166,7 +170,7 @@ describe("Seahorse Escrow", () => {
                     sellerTokenAccount: seller.tokenAccounts["USDC"],
                 })
                 .signers([hacker])
-                .rpc();
+                .rpc({ skipPreflight: true });
             
             success = true;
         } catch(err) {}
@@ -188,6 +192,9 @@ describe("Seahorse Escrow", () => {
 
         const { amount } = await seller.balance("USDC");
         assert.ok(amount == 100)
+
+        const order = await program.account.escrowOrder.fetch(orderAddress);
+        assert.ok(order.state.settled);
     });
 
 });

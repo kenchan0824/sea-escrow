@@ -13,6 +13,7 @@ pub struct EscrowOrder {
     pub order_id: u16,
     pub bump: u8,
     pub seller_token_account: Pubkey,
+    pub referee: Pubkey,
     pub buyer: Pubkey,
     pub buyer_token_account: Pubkey,
     pub mint: Pubkey,
@@ -30,6 +31,7 @@ impl<'info, 'entrypoint> EscrowOrder {
         let order_id = account.order_id;
         let bump = account.bump;
         let seller_token_account = account.seller_token_account.clone();
+        let referee = account.referee.clone();
         let buyer = account.buyer.clone();
         let buyer_token_account = account.buyer_token_account.clone();
         let mint = account.mint.clone();
@@ -44,6 +46,7 @@ impl<'info, 'entrypoint> EscrowOrder {
             order_id,
             bump,
             seller_token_account,
+            referee,
             buyer,
             buyer_token_account,
             mint,
@@ -70,6 +73,10 @@ impl<'info, 'entrypoint> EscrowOrder {
         let seller_token_account = loaded.seller_token_account.clone();
 
         loaded.__account__.seller_token_account = seller_token_account;
+
+        let referee = loaded.referee.clone();
+
+        loaded.__account__.referee = referee;
 
         let buyer = loaded.buyer.clone();
 
@@ -105,6 +112,7 @@ pub struct LoadedEscrowOrder<'info, 'entrypoint> {
     pub order_id: u16,
     pub bump: u8,
     pub seller_token_account: Pubkey,
+    pub referee: Pubkey,
     pub buyer: Pubkey,
     pub buyer_token_account: Pubkey,
     pub mint: Pubkey,
@@ -172,6 +180,7 @@ pub fn init_order_handler<'info>(
     mut order: Empty<Mutable<LoadedEscrowOrder<'info, '_>>>,
     mut vault: Empty<SeahorseAccount<'info, '_, TokenAccount>>,
     mut order_id: u16,
+    mut referee: Pubkey,
     mut amount: u64,
 ) -> () {
     let mut bump = order.bump.unwrap();
@@ -190,6 +199,8 @@ pub fn init_order_handler<'info>(
     assign!(order.borrow_mut().vault, vault.key());
 
     assign!(order.borrow_mut().order_id, order_id);
+
+    assign!(order.borrow_mut().referee, referee);
 
     assign!(order.borrow_mut().amount, amount);
 
