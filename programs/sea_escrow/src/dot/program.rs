@@ -216,6 +216,10 @@ pub fn release_handler<'info>(
         panic!("must relase to seller token account");
     }
 
+    if !(buyer.key() == order.borrow().buyer) {
+        panic!("not your escrow order");
+    }
+
     let mut seller = order.borrow().seller;
     let mut order_id = order.borrow().order_id;
     let mut bump = order.borrow().bump;

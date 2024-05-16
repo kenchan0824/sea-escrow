@@ -83,9 +83,8 @@ describe("Seahorse Escrow", () => {
                 .rpc();
             
             success = true;
-        } catch(err) {
-            success = false;
-        }
+        } catch(err) {}
+        
         assert.ok(success == false)
     });
 
@@ -129,9 +128,8 @@ describe("Seahorse Escrow", () => {
                 .rpc();
             
             success = true;
-        } catch(err) {
-            success = false;
-        }
+        } catch(err) {}
+
         assert.ok(success == false)
     });
 
@@ -150,14 +148,31 @@ describe("Seahorse Escrow", () => {
                 .rpc();
             
             success = true;
-        } catch(err) {
-            success = false;
-        }
+        } catch(err) {}
+
         assert.ok(success == false)
     });
 
-    // it("only buyer can release vault funds", async () => {
-    // });
+    it("only buyer can release vault funds", async () => {
+        let success = false;
+        const hacker = await SimpleUser.generate(provider.connection);
+        
+        try {
+            await program.methods.release()
+                .accounts({
+                    buyer: hacker.publicKey,
+                    order: orderAddress,
+                    vault: vaultAddress,
+                    sellerTokenAccount: seller.tokenAccounts["USDC"],
+                })
+                .signers([hacker])
+                .rpc();
+            
+            success = true;
+        } catch(err) {}
+
+        assert.ok(success == false);
+    });
 
     it("buyer can release vault fund", async () => {
     

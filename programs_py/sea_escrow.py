@@ -87,6 +87,7 @@ def release(
     assert vault.key() == order.vault, "wrong vault inputted"
     assert order.state == OrderState.Deposited, "cannot release before deposit"
     assert seller_token_account.key() == order.seller_token_account, "must relase to seller token account"
+    assert buyer.key() == order.buyer, "not your escrow order"
     
     seller = order.seller
     order_id = order.order_id
