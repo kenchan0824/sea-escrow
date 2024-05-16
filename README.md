@@ -45,10 +45,10 @@ npm test
 
 ## To-Do
 
--[] sellers can dispute to referee
--[] referee can release funds to sellers
--[] referee can only refund or resolve when dispute
--[] only assigned referee can refund or resolve
--[] refund must be made only to the buyer
--[] resolve only release funds to the seller
--[] referee can take commission from the trade
+- [] sellers can dispute to referee
+- [] referee can release funds to sellers
+- [] referee can only refund or resolve when dispute
+- [] only assigned referee can refund or resolve
+- [] refund must be made only to the buyer
+- [] resolve only release funds to the seller
+- [] referee can take commission from the trade
