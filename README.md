@@ -53,6 +53,9 @@ npm test
 - [x] only the buyer can release vault funds
 - [x] buyer can release vault funds
 - [x] buyer cannot dispute after settled
+- [x] only the buyer can dispute his order
+- [x] buyer can dispute his order
+- [x] referee can refund to the buyer
 - [ ] seller can dispute to referee
 - [ ] referee can release vault funds to seller
 - [ ] referee can only refund or resolve when dispute
