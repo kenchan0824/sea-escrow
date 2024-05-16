@@ -45,11 +45,11 @@ describe("Seahorse Escrow", () => {
 
     it("seller can initiate an escrow order", async () => {
 
-        await program.methods.initOrder(orderId, new BN(100_000_000_000))
+        await program.methods.initOrder(orderId, new BN(100 * Math.pow(10, 9)))
             .accounts({
                 seller: seller.publicKey,
                 sellerTokenAccount: seller.tokenAccounts["USDC"],
-                mint: minter.tokens["USDC"],
+                mint: minter.tokens["USDC"].mint,
                 order: orderAddress,
                 vault: vaultAddress
             })
@@ -59,13 +59,13 @@ describe("Seahorse Escrow", () => {
         const order = await program.account.escrowOrder.fetch(orderAddress);
         assert.ok(order.seller.toBase58() == seller.publicKey.toBase58());
         assert.ok(order.sellerTokenAccount.toBase58() == seller.tokenAccounts["USDC"].toBase58());
-        assert.ok(order.mint.toBase58() == minter.tokens["USDC"].toBase58());
-        assert.ok(order.amount.toNumber() == 100_000_000_000);
+        assert.ok(order.mint.toBase58() == minter.tokens["USDC"].mint.toBase58());
+        assert.ok(order.amount.toNumber() == 100 * Math.pow(10, 9));
         assert.ok(order.vault.toBase58() == vaultAddress.toBase58());
         assert.ok(order.state.pending);
 
         const vault = await getAccount(provider.connection, vaultAddress);
-        assert.ok(vault.mint.toBase58() == minter.tokens["USDC"].toBase58());
+        assert.ok(vault.mint.toBase58() == minter.tokens["USDC"].mint.toBase58());
     });
 
     it("buyer cannot release fund before deposit", async () => {
@@ -101,10 +101,11 @@ describe("Seahorse Escrow", () => {
             .signers([buyer])
             .rpc();
 
-        const balance = await buyer.balance("USDC");
-        assert.ok(balance == 100);
+        const { amount } = await buyer.balance("USDC");
+        assert.ok(amount == 100);
+
         const vault = await getAccount(provider.connection, vaultAddress);
-        assert.ok(Number(vault.amount) == 100_000_000_000);
+        assert.ok(Number(vault.amount) == 100 * Math.pow(10, 9));
 
         const order = await program.account.escrowOrder.fetch(orderAddress);
         assert.ok(order.buyer.toBase58() == buyer.publicKey.toBase58());
@@ -170,8 +171,8 @@ describe("Seahorse Escrow", () => {
             .signers([buyer])
             .rpc({ skipPreflight: true });
 
-        const balance = await seller.balance("USDC");
-        assert.ok(balance == 100)
+        const { amount } = await seller.balance("USDC");
+        assert.ok(amount == 100)
     });
 
 });
