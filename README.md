@@ -2,15 +2,18 @@
 
 Most DeFi protocols need to take custody of users fund. Our Escrow program demonstrates how to achieve that with **Seahorse**.
 
+> Please refer to the [Counter program](https://github.com/kenchan0824/sea-counter) for the Seahorse basics. Also, our test module uses the **Simple-Web3** module, you can read the docs [here](https://github.com/kenchan0824/simple-web3).
+
+## Use Cases
 This project is motivated by an imaginary E-commerce scenario, where the seller lists his his products or services with the dedicated price. 
+
+![escrow](./escrow.png)
+
 - If a buyer takes the deal, the seller would issue an escrow order to him with an assigned referee. 
 - The buyer then commits the deal by depositing funds to the order. 
 - When the product is fulfilled, he can instruct the order to release the funds to the seller. 
 - Otherwise, he can dispute to the referee and ask for a refund. 
 
-![escrow](./escrow.png)
-
-> Refer to the [Counter program](https://github.com/kenchan0824/sea-counter) for the Seahorse basics. Also, our test module uses the **Simple-Web3** module, you can read the docs [here](https://github.com/kenchan0824/simple-web3).
 
 ## Pre-requisites
 - Solana 1.18.12
