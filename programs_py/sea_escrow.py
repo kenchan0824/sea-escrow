@@ -11,6 +11,7 @@ class OrderState(Enum):
     Dispute = 2
     Settled = 3
     Refunded = 4
+    Resolved = 5
 
 class EscrowOrder(Account):
     seller: Pubkey
@@ -104,3 +105,40 @@ def release(
     )
     
     order.state = OrderState.Settled
+
+
+@instruction
+def dispute(
+    buyer: Signer,
+    order: EscrowOrder,
+):
+    assert buyer.key() == order.buyer, "not your escrow order"
+    assert order.state == OrderState.Deposited, "not deposited or settled"
+    
+    order.state = OrderState.Dispute
+    
+    
+@instruction
+def refund(
+    referee: Signer,
+    order: EscrowOrder,
+    vault: TokenAccount,
+    buyer_token_account: TokenAccount
+):
+    assert vault.key() == order.vault, "wrong vault inputted"
+    assert order.state == OrderState.Dispute, "cannot refund before dispute"
+    assert buyer_token_account.key() == order.buyer_token_account, "must relase to buyer token account"
+    assert referee.key() == order.referee, "you are not referee"
+    
+    seller = order.seller
+    order_id = order.order_id
+    bump = order.bump
+    
+    vault.transfer(
+        to = buyer_token_account,
+        amount = vault.amount(),
+        authority = order,
+        signer = ["order", seller, order_id, bump]
+    )
+    
+    order.state = OrderState.Refunded

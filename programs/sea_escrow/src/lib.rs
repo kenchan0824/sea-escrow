@@ -274,6 +274,31 @@ mod sea_escrow {
     }
 
     #[derive(Accounts)]
+    pub struct Dispute<'info> {
+        #[account(mut)]
+        pub buyer: Signer<'info>,
+        #[account(mut)]
+        pub order: Box<Account<'info, dot::program::EscrowOrder>>,
+    }
+
+    pub fn dispute(ctx: Context<Dispute>) -> Result<()> {
+        let mut programs = HashMap::new();
+        let programs_map = ProgramsMap(programs);
+        let buyer = SeahorseSigner {
+            account: &ctx.accounts.buyer,
+            programs: &programs_map,
+        };
+
+        let order = dot::program::EscrowOrder::load(&mut ctx.accounts.order, &programs_map);
+
+        dispute_handler(buyer.clone(), order.clone());
+
+        dot::program::EscrowOrder::store(order);
+
+        return Ok(());
+    }
+
+    #[derive(Accounts)]
     # [instruction (order_id : u16 , referee : Pubkey , amount : u64)]
     pub struct InitOrder<'info> {
         #[account(mut)]
@@ -350,6 +375,56 @@ mod sea_escrow {
         );
 
         dot::program::EscrowOrder::store(order.account);
+
+        return Ok(());
+    }
+
+    #[derive(Accounts)]
+    pub struct Refund<'info> {
+        #[account(mut)]
+        pub referee: Signer<'info>,
+        #[account(mut)]
+        pub order: Box<Account<'info, dot::program::EscrowOrder>>,
+        #[account(mut)]
+        pub vault: Box<Account<'info, TokenAccount>>,
+        #[account(mut)]
+        pub buyer_token_account: Box<Account<'info, TokenAccount>>,
+        pub token_program: Program<'info, Token>,
+    }
+
+    pub fn refund(ctx: Context<Refund>) -> Result<()> {
+        let mut programs = HashMap::new();
+
+        programs.insert(
+            "token_program",
+            ctx.accounts.token_program.to_account_info(),
+        );
+
+        let programs_map = ProgramsMap(programs);
+        let referee = SeahorseSigner {
+            account: &ctx.accounts.referee,
+            programs: &programs_map,
+        };
+
+        let order = dot::program::EscrowOrder::load(&mut ctx.accounts.order, &programs_map);
+        let vault = SeahorseAccount {
+            account: &ctx.accounts.vault,
+            programs: &programs_map,
+        };
+
+        let buyer_token_account = SeahorseAccount {
+            account: &ctx.accounts.buyer_token_account,
+            programs: &programs_map,
+        };
+
+        refund_handler(
+            referee.clone(),
+            order.clone(),
+            vault.clone(),
+            buyer_token_account.clone(),
+        );
+
+        dot::program::EscrowOrder::store(order);
 
         return Ok(());
     }

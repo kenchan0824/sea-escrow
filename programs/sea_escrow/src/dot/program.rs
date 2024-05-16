@@ -128,6 +128,7 @@ pub enum OrderState {
     Dispute,
     Settled,
     Refunded,
+    Resolved,
 }
 
 impl Default for OrderState {
@@ -173,6 +174,21 @@ pub fn deposit_handler<'info>(
     assign!(order.borrow_mut().state, OrderState::Deposited);
 }
 
+pub fn dispute_handler<'info>(
+    mut buyer: SeahorseSigner<'info, '_>,
+    mut order: Mutable<LoadedEscrowOrder<'info, '_>>,
+) -> () {
+    if !(buyer.key() == order.borrow().buyer) {
+        panic!("not your escrow order");
+    }
+
+    if !(order.borrow().state == OrderState::Deposited) {
+        panic!("not deposited or settled");
+    }
+
+    assign!(order.borrow_mut().state, OrderState::Dispute);
+}
+
 pub fn init_order_handler<'info>(
     mut seller: SeahorseSigner<'info, '_>,
     mut seller_token_account: SeahorseAccount<'info, '_, TokenAccount>,
@@ -207,6 +223,56 @@ pub fn init_order_handler<'info>(
     assign!(order.borrow_mut().bump, bump);
 
     assign!(order.borrow_mut().state, OrderState::Pending);
+}
+
+pub fn refund_handler<'info>(
+    mut referee: SeahorseSigner<'info, '_>,
+    mut order: Mutable<LoadedEscrowOrder<'info, '_>>,
+    mut vault: SeahorseAccount<'info, '_, TokenAccount>,
+    mut buyer_token_account: SeahorseAccount<'info, '_, TokenAccount>,
+) -> () {
+    if !(vault.key() == order.borrow().vault) {
+        panic!("wrong vault inputted");
+    }
+
+    if !(order.borrow().state == OrderState::Dispute) {
+        panic!("cannot refund before dispute");
+    }
+
+    if !(buyer_token_account.key() == order.borrow().buyer_token_account) {
+        panic!("must relase to buyer token account");
+    }
+
+    if !(referee.key() == order.borrow().referee) {
+        panic!("you are not referee");
+    }
+
+    let mut seller = order.borrow().seller;
+    let mut order_id = order.borrow().order_id;
+    let mut bump = order.borrow().bump;
+
+    token::transfer(
+        CpiContext::new_with_signer(
+            vault.programs.get("token_program"),
+            token::Transfer {
+                from: vault.to_account_info(),
+                authority: order.borrow().__account__.to_account_info(),
+                to: buyer_token_account.clone().to_account_info(),
+            },
+            &[Mutable::new(vec![
+                "order".to_string().as_bytes().as_ref(),
+                seller.as_ref(),
+                order_id.to_le_bytes().as_ref(),
+                bump.to_le_bytes().as_ref(),
+            ])
+            .borrow()
+            .as_slice()],
+        ),
+        vault.amount,
+    )
+    .unwrap();
+
+    assign!(order.borrow_mut().state, OrderState::Refunded);
 }
 
 pub fn release_handler<'info>(
