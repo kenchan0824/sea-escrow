@@ -1,17 +1,17 @@
 # Seahorse Escrow
 
-Most DeFi protocols need to take custody of users fund. Our Escrow program demonstrates how to achieve that safely with **Seahorse**.
+Almost all DeFi protocols need to take custody of users fund. Our Escrow program demonstrates how to achieve that safely with **Seahorse**.
 
 Please refer to the [Counter program](https://github.com/kenchan0824/sea-counter) for the Seahorse basics. Also, [Simple-Web3](https://github.com/kenchan0824/simple-web3) is used in the test module, you may read the docs there.
 
 ## Use Cases
-This project is motivated by an imaginary E-commerce scenario, where the seller lists his his products or services with the dedicated price. 
+This project is motivated by an imaginary E-commerce scenario, where the sellers list their products or services with the dedicated price. 
 
 ![escrow](./escrow.png)
 
 - If a buyer takes the deal, the seller would issue him an escrow order with an assigned referee. 
-- The buyer then commits the deal by depositing funds to the order. 
-- When the product is fulfilled, he can instruct the order to release the funds to the seller. 
+- The buyer then commits the deal by depositing funds to the order vault. 
+- When the product is fulfilled, he can instruct the order vault to release the funds to the seller. 
 - Otherwise, he can dispute to the referee and ask for a refund. 
 
 
@@ -45,10 +45,10 @@ npm test
 
 ## To-Do
 
-[] sellers can dispute to referee
-[] referee can release funds to sellers
-[] referee can only refund or resolve when dispute
-[] only assigned referee can refund or resolve
-[] refund must be made only to the buyer
-[] resolve only release funds to the seller
-[] referee can take commission from the trade
+-[] sellers can dispute to referee
+-[] referee can release funds to sellers
+-[] referee can only refund or resolve when dispute
+-[] only assigned referee can refund or resolve
+-[] refund must be made only to the buyer
+-[] resolve only release funds to the seller
+-[] referee can take commission from the trade
