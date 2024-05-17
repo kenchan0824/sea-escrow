@@ -45,21 +45,21 @@ npm test
 
 ## To-Do
 
-- [x] seller can initiate an escrow order
-- [x] buyer cannot release funds before deposit
-- [x] buyer can deposit funds to the vault
-- [x] buyer cannot deposit repeatedly for the same order
-- [x] buyer must release to the seller token account
-- [x] only the buyer can release vault funds
-- [x] buyer can release vault funds
-- [x] buyer cannot dispute after settled
-- [x] only the buyer can dispute his order
-- [x] buyer can dispute his order
-- [x] referee can refund to the buyer
-- [ ] seller can dispute to referee
-- [ ] referee can release vault funds to seller
-- [ ] referee can only refund or resolve when dispute
-- [ ] only assigned referee can refund or resolve
-- [ ] refund must be made only to the buyer
-- [ ] resolve only release funds to the seller
-- [ ] referee can take commission from the trade
+- [x] Sellers can initiate an escrow order
+- [x] Buyers cannot release funds before deposit
+- [x] Buyers can deposit funds to the vault
+- [x] Buyers cannot deposit again for the same order
+- [x] Buyers must release to the seller token account
+- [x] Only the buyer can release vault funds
+- [x] Buyers can release vault funds
+- [x] Buyers cannot dispute after settled
+- [x] Only the buyer can dispute his order
+- [x] Buyers can dispute his order
+- [x] The referee can refund to the buyer
+- [ ] Sellers can dispute to referee
+- [ ] The referee can release vault funds to seller
+- [ ] The referee can only refund or resolve when dispute
+- [ ] Only assigned referee can refund or resolve
+- [ ] Refund must be made only to the buyer
+- [ ] Resolving release funds only to the seller
+- [ ] The referee can take commission from the trade
