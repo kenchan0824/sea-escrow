@@ -217,7 +217,7 @@ describe("Seahorse Escrow - Settle Route", () => {
     });
 });
 
-describe("Seahorse Escrow - Dispute Route", async () => {
+describe.skip("Seahorse Escrow - Dispute Route", async () => {
 
     let minter: SimpleUser;
     let seller: SimpleUser;

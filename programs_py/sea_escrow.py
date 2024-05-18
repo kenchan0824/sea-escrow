@@ -47,7 +47,7 @@ def init_order(
         payer = seller,
         seeds = ["vault", order.key()],
         mint = mint,
-        authority = order,    
+        authority = order,
     )
 
     order.seller = seller.key()
