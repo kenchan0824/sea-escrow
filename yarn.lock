@@ -181,13 +181,14 @@
     rpc-websockets "^7.11.0"
     superstruct "^0.14.2"
 
-"@solardev/simple-web3@^0.3.0":
-  version "0.3.0"
-  resolved "https://registry.npmjs.org/@solardev/simple-web3/-/simple-web3-0.3.0.tgz"
-  integrity sha512-wXizGIyFLIKvofYPmdl2UGe91/a4xQEWz+D/dtOOyxSXsA1dUiutRHjMkshrrv5sTGDggd2WcdJOcDs+RofMjA==
+"@solardev/simple-web3@^0.3.3":
+  version "0.3.3"
+  resolved "https://registry.npmjs.org/@solardev/simple-web3/-/simple-web3-0.3.3.tgz"
+  integrity sha512-d6k09zCCX0mT6rwyeYzfTNirQVr9bxu2AFgc2KvKq4VYSGHv6ZuS/5poGnOdw9YmtVf/ePez9W2Ie7SWzpY4YQ==
   dependencies:
     "@solana/spl-token" "^0.4.6"
     "@solana/web3.js" "^1.91.8"
+    bn.js "^5.2.1"
 
 "@types/bn.js@^5.1.0":
   version "5.1.5"

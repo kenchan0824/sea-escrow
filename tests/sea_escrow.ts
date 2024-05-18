@@ -1,8 +1,9 @@
 import { getAccount } from "@solana/spl-token"
 import * as anchor from "@coral-xyz/anchor";
-import { web3, Program, BN } from "@coral-xyz/anchor";
+import { web3, Program } from "@coral-xyz/anchor";
+import BN from "bn.js";
 import { SeaEscrow } from "../target/types/sea_escrow";
-import { SimpleUser } from "@solardev/simple-web3";
+import { SimpleUser, findProgramAddress, u16 } from "@solardev/simple-web3";
 const assert = require("assert");
 
 const provider = anchor.AnchorProvider.env();
@@ -34,14 +35,14 @@ describe("Seahorse Escrow - Settle Route", () => {
 
         orderId = 255;
 
-        [orderAddress, ] = web3.PublicKey.findProgramAddressSync(
-            [Buffer.from("order"), seller.publicKey.toBuffer(), new BN(orderId).toArrayLike(Buffer, 'le', 2)],
-            program.programId
+        [orderAddress, ] = findProgramAddress(
+            program.programId,
+            ["order", seller.publicKey, u16(orderId)]
         );
 
-        [vaultAddress,] = web3.PublicKey.findProgramAddressSync(
-            [Buffer.from("vault"), orderAddress.toBuffer()],
-            program.programId
+        [vaultAddress,] = findProgramAddress(
+            program.programId,
+            ["vault", orderAddress]
         );
     });
 
@@ -217,7 +218,7 @@ describe("Seahorse Escrow - Settle Route", () => {
     });
 });
 
-describe.skip("Seahorse Escrow - Dispute Route", async () => {
+describe("Seahorse Escrow - Dispute Route", async () => {
 
     let minter: SimpleUser;
     let seller: SimpleUser;
@@ -242,14 +243,14 @@ describe.skip("Seahorse Escrow - Dispute Route", async () => {
 
         orderId = 256;
 
-        [orderAddress, ] = web3.PublicKey.findProgramAddressSync(
-            [Buffer.from("order"), seller.publicKey.toBuffer(), new BN(orderId).toArrayLike(Buffer, 'le', 2)],
-            program.programId
+        [orderAddress, ] = findProgramAddress(
+            program.programId,
+            ["order", seller.publicKey, u16(orderId)]
         );
 
-        [vaultAddress,] = web3.PublicKey.findProgramAddressSync(
-            [Buffer.from("vault"), orderAddress.toBuffer()],
-            program.programId
+        [vaultAddress,] = findProgramAddress(
+            program.programId,
+            ["vault", orderAddress]
         );
 
         const amount = new BN(100 * Math.pow(10, 9));
